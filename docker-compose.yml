@@ -1,0 +1,29 @@
+
+
+services:
+  # 1. Сервис БЭКЕНДА (FastAPI)
+  fastapi-app:
+    # Dockerfile для этого сервиса находится в текущей папке (.).
+    # Docker Compose сам соберет образ, если он еще не существует.
+    build: . 
+    # Сервис FastAPI слушает порт 8000 внутри приватной сети Docker.
+    # Мы НЕ пробрасываем его на хост, чтобы он был доступен ТОЛЬКО для Nginx.
+    expose:
+      - 8000
+    # Имя контейнера для удобства
+    container_name: fastapi-backend
+
+  # 2. Сервис ФРОНТЕНДА (Nginx Reverse Proxy)
+  nginx-proxy:
+    # Используем готовый официальный образ Nginx
+    image: nginx:stable-alpine
+    # Пробрасываем порт 80 Nginx на порт 80 хост-машины (Ubuntu)
+    ports:
+      - "80:80"
+    # Копируем наш локальный конфиг Nginx внутрь контейнера
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # Nginx зависит от того, что fastapi-app будет запущен
+    depends_on:
+      - fastapi-app
+    container_name: nginx-frontend
