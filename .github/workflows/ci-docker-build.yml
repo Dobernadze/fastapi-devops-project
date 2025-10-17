@@ -1,26 +1,73 @@
-name: CI - Docker Build
+name: CI/CD - Test, Build & Publish
 
-# Когда запускать этот рабочий процесс
 on:
   push:
     branches:
-      - main # Запускается при отправке (push) в ветку main
+      - main 
+  # Добавим для удобства, чтобы тестировать PR перед слиянием
   pull_request:
     branches:
-      - main # Запускается при создании Pull Request в ветку main
+      - main
 
-# Определение задания (Job)
 jobs:
-  build-docker-image:
-    runs-on: ubuntu-latest # Выполняется на виртуальной машине Ubuntu
+  build-and-publish:
+    runs-on: ubuntu-latest
+    # Обязательные разрешения для работы с реестром
+    permissions:
+      packages: write
+      contents: read
 
     steps:
       - name: Checkout Code
-        # Получает код из репозитория
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
-        # Выполняет команду сборки Docker
+      # 1. Настройка Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' 
+
+      # 2. Установка зависимостей
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 3. Запуск тестов
+      - name: Run Pytest Tests
+        run: pytest
+        
+      # --- ШАГИ CD (ПУБЛИКАЦИЯ) ---
+
+      # 4. Аутентификация в GitHub Container Registry (GHCR)
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          # Использует ваше имя пользователя GitHub
+          username: ${{ github.actor }} 
+          # Использует токен, который вы сохранили в Secrets
+          password: ${{ secrets.DOCKER_PUSH_TOKEN }} 
+
+      # 5. Определяем имя образа и тег
+      - name: Set up Image Tag
+        id: meta
         run: |
-          # Используем команду, которую мы уже освоили
-          docker build -t fastapi-ci-test:latest .
+          # ВАЖНО: Мы явно прописываем полный путь к вашему реестру
+          # Dobernadze/fastapi-devops-project — это Ваш_Пользователь/Ваш_Репозиторий
+          REPO_PATH="ghcr.io/Dobernadze/fastapi-devops-project" 
+          
+          # Формируем теги: по SHA коммита и 'latest'
+          echo "IMAGE_TAG=${REPO_PATH}:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+          echo "LATEST_TAG=${REPO_PATH}:latest" >> $GITHUB_ENV
+
+      # 6. Собираем и пушим образ
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.LATEST_TAG }}
+          cache-from: type=gha 
+          cache-to: type=gha,mode=max
