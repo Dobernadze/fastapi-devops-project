@@ -1,0 +1,26 @@
+name: CI - Docker Build
+
+# Когда запускать этот рабочий процесс
+on:
+  push:
+    branches:
+      - main # Запускается при отправке (push) в ветку main
+  pull_request:
+    branches:
+      - main # Запускается при создании Pull Request в ветку main
+
+# Определение задания (Job)
+jobs:
+  build-docker-image:
+    runs-on: ubuntu-latest # Выполняется на виртуальной машине Ubuntu
+
+    steps:
+      - name: Checkout Code
+        # Получает код из репозитория
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        # Выполняет команду сборки Docker
+        run: |
+          # Используем команду, которую мы уже освоили
+          docker build -t fastapi-ci-test:latest .
