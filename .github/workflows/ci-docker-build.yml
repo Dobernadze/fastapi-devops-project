@@ -56,9 +56,12 @@ jobs:
       - name: Set up Image Tag
         id: meta
         run: |
-          # ВАЖНО: Мы явно прописываем полный путь к вашему реестру
-          # Dobernadze/fastapi-devops-project — это Ваш_Пользователь/Ваш_Репозиторий
-          REPO_PATH="ghcr.io/Dobernadze/fastapi-devops-project" 
+          # ВАЖНО: Используем github.repository_owner | lower для нижнего регистра
+          REPO_OWNER_LOWERCASE=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+          REPO_NAME_LOWERCASE=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
+          
+          # Формируем полный путь к реестру с именем в нижнем регистре
+          REPO_PATH="ghcr.io/${REPO_OWNER_LOWERCASE}/${REPO_NAME_LOWERCASE}"
           
           # Формируем теги: по SHA коммита и 'latest'
           echo "IMAGE_TAG=${REPO_PATH}:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
