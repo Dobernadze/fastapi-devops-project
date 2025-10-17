@@ -21,6 +21,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+        # НОВЫЙ ШАГ 2: Настройка Buildx Builder (Это исправит ошибку кэширования)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       # 1. Настройка Python
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
