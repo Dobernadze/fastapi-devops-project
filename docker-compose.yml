@@ -13,6 +13,9 @@ services:
    
     env_file:  # <-- НОВЫЙ БЛОК
       - .secrets
+
+    volumes:
+      - ./logs:/app/logs # Монтируем локальную папку 'logs' в контейнер как '/app/logs'  
     # Имя контейнера для удобства
     container_name: fastapi-backend
 
