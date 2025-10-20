@@ -5,8 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict # Важный и
 class Settings(BaseSettings):
     # 2. Имя переменной окружения: SECRET_KEY
     # 3. Значение по умолчанию: 'default-secret-key' (для локального dev)
-    secret_key: str = "default-secret-key"
-
+    
     # 4. Указываем Pydantic, что нужно искать переменные окружения
     model_config = SettingsConfigDict(env_file='.env', extra='ignore')
 
