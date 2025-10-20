@@ -6,4 +6,4 @@ __pycache__/
 # Docker build artifacts
 .dockerignore
 
-.env
+.env.secrets

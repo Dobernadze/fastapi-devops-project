@@ -11,6 +11,8 @@ services:
     expose:
       - 8000
    
+    env_file:  # <-- НОВЫЙ БЛОК
+      - .secrets
     # Имя контейнера для удобства
     container_name: fastapi-backend
 
