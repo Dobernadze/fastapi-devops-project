@@ -10,6 +10,7 @@ services:
     # Мы НЕ пробрасываем его на хост, чтобы он был доступен ТОЛЬКО для Nginx.
     expose:
       - 8000
+   
     # Имя контейнера для удобства
     container_name: fastapi-backend
 
