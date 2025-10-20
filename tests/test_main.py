@@ -14,4 +14,8 @@ def test_read_root():
     assert response.status_code == 200
 
     # Проверяем содержимое ответа
-    assert response.json() == {"message": "Hello World"}
+  
+    assert response.json() == {
+        "message": "Hello World",
+        "secret_key_used": "default-secret-key" # <--- Здесь ожидаем значение по умолчанию!
+    }
