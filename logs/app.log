@@ -1,0 +1,3 @@
+2025-10-20 12:28:57.312 | INFO     | main:read_root:19 - Handling root request: /
+2025-10-20 12:29:06.101 | WARNING  | main:read_secret:24 - Accessing protected endpoint: /secret
+2025-10-20 12:29:10.038 | INFO     | main:read_root:19 - Handling root request: /
