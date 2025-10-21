@@ -18,7 +18,8 @@ services:
       - ./logs:/app/logs # Монтируем локальную папку 'logs' в контейнер как '/app/logs'  
     
     depends_on:
-      - db
+      db:
+        condition: service_healthy # <-- Ждем, пока healthcheck БД станет успешным
     # Имя контейнера для удобства
     container_name: fastapi-backend
 
@@ -44,5 +45,12 @@ services:
       volumes:
         - postgres_data:/var/lib/postgresql/data # Volume для сохранения данных БД
       restart: always
+
+      # НОВЫЙ БЛОК: Проверка готовности (Healthcheck)
+      healthcheck:
+        test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+        interval: 5s
+        timeout: 5s
+        retries: 5
 volumes:
   postgres_data:
