@@ -69,32 +69,4 @@ jobs:
           cache-from: type=gha 
           cache-to: type=gha,mode=max
   
-  # 2. Развертывание в Kubernetes (зависит от успешной сборки)
-  deploy-to-kubernetes:
-    needs: build-and-publish
-    runs-on: ubuntu-latest
-    # Используем разрешения только на чтение
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        id: install
-
-      - name: Deploy to Kubernetes Cluster (Rolling Update)
-        # Эта команда использует токен K8S, чтобы обновить Deployment 
-        # и заставить его использовать только что собранный тег "latest"
-        run: |
-          # 1. Настройка конфигурации kubectl (используем Service Account Token)
-          # TOKEN: Секрет, который мы сохранили на GitHub.
-          # SERVER: Адрес кластера Minikube (заглушка для аутентификации).
-          # CERT: Сертификат, необходимый K8s для подтверждения подлинности API.
-          kubectl config set-cluster minikube --server=https://192.168.49.2:8443 --insecure-skip-tls-verify=true
-          kubectl config set-credentials github-deployer --token=${{ secrets.KUBE_TOKEN }}
-          kubectl config set-context default --cluster=minikube --user=github-deployer
-          kubectl config use-context default
-          
-          # 2. Обновление Deployment: устанавливаем новый образ 'latest'
-          echo "Triggering Kubernetes Deployment update..."
-          kubectl set image deployment/fastapi-deployment fastapi-container=${{ env.LATEST_TAG }}
+  
