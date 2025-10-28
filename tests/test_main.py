@@ -1,8 +1,8 @@
 # Импортируем специальный тестовый клиент для ASGI-приложений (FastAPI)
 from fastapi.testclient import TestClient 
 from main import app 
-# Нужно импортировать настройки, чтобы проверять значение secret_key_used
-from app.config import settings
+# ИМПОРТИРУЕМ settings ИЗ main.py, где оно было создано!
+from main import settings
 
 # Создаем тестовый клиент. 
 client = TestClient(app) 
@@ -15,8 +15,8 @@ def test_read_root():
     assert response.status_code == 200
 
     # Проверяем содержимое ответа
-    # *** ИСПРАВЛЕНО: Теперь ожидаем новое сообщение ***
     assert response.json() == {
+        # Новое сообщение, которое мы ожидаем
         "message": "Hello World from CI/CD v2", 
         "secret_key_used": settings.secret_key
     }
