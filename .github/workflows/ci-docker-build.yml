@@ -1,18 +1,17 @@
-name: CI/CD - Test, Build & Publish
+name: CI/CD - Test, Build & Deploy to K8s
 
 on:
   push:
     branches:
       - main 
-  # Добавим для удобства, чтобы тестировать PR перед слиянием
   pull_request:
     branches:
       - main
 
 jobs:
   build-and-publish:
+    # 1. Сборка и публикация Docker-образа
     runs-on: ubuntu-latest
-    # Обязательные разрешения для работы с реестром
     permissions:
       packages: write
       contents: read
@@ -21,53 +20,44 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-        # НОВЫЙ ШАГ 2: Настройка Buildx Builder (Это исправит ошибку кэширования)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # 1. Настройка Python
+      # Настройка Python и установка зависимостей
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip' 
 
-      # 2. Установка зависимостей
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 3. Запуск тестов
       - name: Run Pytest Tests
         run: pytest
         
       # --- ШАГИ CD (ПУБЛИКАЦИЯ) ---
 
-      # 4. Аутентификация в GitHub Container Registry (GHCR)
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          # Использует ваше имя пользователя GitHub
           username: ${{ github.actor }} 
-          # Использует токен, который вы сохранили в Secrets
           password: ${{ secrets.DOCKER_PUSH_TOKEN }} 
 
-      # 5. Определяем имя образа и тег
       - name: Set up Image Tag
         id: meta
         run: |
-          # ВАЖНО: Используем github.repository_owner | lower для нижнего регистра
+          # Используем имя репозитория в нижнем регистре: dobernadze/fastapi-devops-project
           REPO_OWNER_LOWERCASE=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
           REPO_NAME_LOWERCASE=$(echo ${{ github.event.repository.name }} | tr '[:upper:]' '[:lower:]')
           
-          # Формируем полный путь к реестру с именем в нижнем регистре
           REPO_PATH="ghcr.io/${REPO_OWNER_LOWERCASE}/${REPO_NAME_LOWERCASE}"
           
           # Формируем теги: по SHA коммита и 'latest'
           echo "IMAGE_TAG=${REPO_PATH}:$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
           echo "LATEST_TAG=${REPO_PATH}:latest" >> $GITHUB_ENV
 
-      # 6. Собираем и пушим образ
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -78,3 +68,33 @@ jobs:
             ${{ env.LATEST_TAG }}
           cache-from: type=gha 
           cache-to: type=gha,mode=max
+  
+  # 2. Развертывание в Kubernetes (зависит от успешной сборки)
+  deploy-to-kubernetes:
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+    # Используем разрешения только на чтение
+    permissions:
+      contents: read
+    
+    steps:
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        id: install
+
+      - name: Deploy to Kubernetes Cluster (Rolling Update)
+        # Эта команда использует токен K8S, чтобы обновить Deployment 
+        # и заставить его использовать только что собранный тег "latest"
+        run: |
+          # 1. Настройка конфигурации kubectl (используем Service Account Token)
+          # TOKEN: Секрет, который мы сохранили на GitHub.
+          # SERVER: Адрес кластера Minikube (заглушка для аутентификации).
+          # CERT: Сертификат, необходимый K8s для подтверждения подлинности API.
+          kubectl config set-cluster minikube --server=https://192.168.49.2:8443 --insecure-skip-tls-verify=true
+          kubectl config set-credentials github-deployer --token=${{ secrets.KUBE_TOKEN }}
+          kubectl config set-context default --cluster=minikube --user=github-deployer
+          kubectl config use-context default
+          
+          # 2. Обновление Deployment: устанавливаем новый образ 'latest'
+          echo "Triggering Kubernetes Deployment update..."
+          kubectl set image deployment/fastapi-deployment fastapi-container=${{ env.LATEST_TAG }}

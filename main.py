@@ -28,15 +28,11 @@ def on_startup():
 
 
 
-
-
-
-
 @app.get("/")
 def read_root():
     # Добавляем запись в лог при каждом запросе
     logger.info("Handling root request: /") # <-- НОВАЯ СТРОКА
-    return {"message": "Hello World", "secret_key_used": settings.secret_key}
+    return {"message": "Hello World from CI/CD v2", "secret_key_used": settings.secret_key}
 
 @app.get("/secret")
 def read_secret():

@@ -1,0 +1,48 @@
+# K8s Deployment для FastAPI-приложения
+
+# 1. Секция API Version и Тип Объекта
+apiVersion: apps/v1
+kind: Deployment
+
+# 2. Секция Metadata (Имя и метки)
+metadata:
+  name: fastapi-deployment
+  labels:
+    app: fastapi
+
+# 3. Секция Spec (Спецификация)
+spec:
+  # Мы хотим, чтобы K8s поддерживал 2 реплики (копии)
+  replicas: 2 
+  selector:
+    matchLabels:
+      app: fastapi
+  
+  # Описание Pod (единицы развертывания)
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+
+      imagePullSecrets:
+      - name: ghcr-auth-secret
+
+      containers:
+      # Описание контейнера
+      - name: fastapi-container
+        # Используем образ, который мы собирали в CI/CD и пушили в GitHub Container Registry
+        image: ghcr.io/dobernadze/fastapi-devops-project:latest 
+        imagePullPolicy: Always # Всегда скачивать свежий образ
+        
+        # Порт, который слушает приложение ВНУТРИ контейнера
+        ports:
+        - containerPort: 8000
+        
+        # Переменные окружения (Secrets мы настроим позже)
+        env:
+        - name: SECRET_KEY # Это имя переменной, которую ждет FastAPI
+          valueFrom:
+            secretKeyRef:
+              name: fastapi-secrets # Имя K8s Secret (из app-secret.yaml)
+              key: FASTAPI_SECRET_KEY # Имя ключа ВНУТРИ Secret

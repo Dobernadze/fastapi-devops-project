@@ -1,3 +1,12 @@
 2025-10-20 12:28:57.312 | INFO     | main:read_root:19 - Handling root request: /
 2025-10-20 12:29:06.101 | WARNING  | main:read_secret:24 - Accessing protected endpoint: /secret
 2025-10-20 12:29:10.038 | INFO     | main:read_root:19 - Handling root request: /
+2025-10-21 06:23:42.237 | ERROR    | main:on_startup:26 - Failed to connect to the database: No module named 'psycopg2'
+2025-10-21 06:36:19.739 | ERROR    | main:on_startup:26 - Failed to connect to the database: No module named 'psycopg2'
+2025-10-21 06:42:09.840 | ERROR    | main:on_startup:26 - Failed to connect to the database: No module named 'psycopg2'
+2025-10-21 06:51:03.591 | ERROR    | main:on_startup:26 - Failed to connect to the database: No module named 'psycopg2'
+2025-10-21 07:00:27.444 | ERROR    | main:on_startup:26 - Failed to connect to the database: (psycopg2.OperationalError) connection to server at "db" (172.18.0.2), port 5432 failed: Connection refused
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-10-21 07:19:12.886 | INFO     | main:on_startup:24 - Successfully connected to the database.

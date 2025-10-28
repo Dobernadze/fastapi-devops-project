@@ -1,0 +1,33 @@
+# 1. Создание Service Account (Учетная запись для нашего робота)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: github-deployer
+  namespace: default
+---
+# 2. Создание Role (Определение прав, которые нужны роботу)
+# Нам нужно только обновлять объекты 'deployments'
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: deploy-updater-role
+  namespace: default
+rules:
+- apiGroups: ["apps"] # Группа для Deployment-объектов
+  resources: ["deployments"] # Объекты, которыми мы разрешаем управлять
+  verbs: ["get", "update", "patch", "list", "watch"] # Разрешаем получать, обновлять и т.д.
+---
+# 3. Привязка Role к Service Account (Предоставление прав роботу)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: github-deployer-binding
+  namespace: default
+subjects:
+- kind: ServiceAccount
+  name: github-deployer
+  namespace: default
+roleRef:
+  kind: Role
+  name: deploy-updater-role
+  apiGroup: rbac.authorization.k8s.io
