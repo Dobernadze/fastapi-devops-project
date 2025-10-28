@@ -1,9 +1,10 @@
 # Импортируем специальный тестовый клиент для ASGI-приложений (FastAPI)
 from fastapi.testclient import TestClient 
 from main import app 
+# Нужно импортировать настройки, чтобы проверять значение secret_key_used
+from app.config import settings
 
 # Создаем тестовый клиент. 
-# TestClient, в отличие от httpx.Client, ПРИНИМАЕТ аргумент app=app.
 client = TestClient(app) 
 
 def test_read_root():
@@ -14,8 +15,8 @@ def test_read_root():
     assert response.status_code == 200
 
     # Проверяем содержимое ответа
-  
+    # *** ИСПРАВЛЕНО: Теперь ожидаем новое сообщение ***
     assert response.json() == {
-        "message": "Hello World",
-        "secret_key_used": "default-secret-key" # <--- Здесь ожидаем значение по умолчанию!
+        "message": "Hello World from CI/CD v2", 
+        "secret_key_used": settings.secret_key
     }
