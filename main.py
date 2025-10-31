@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from loguru import logger # <-- НОВЫЙ ИМПОРТ
+from loguru import logger
 from sqlmodel import create_engine
+# НОВЫЙ ИМПОРТ: Инструмент для Prometheus
+from prometheus_fastapi_instrumentator import Instrumentator
 
 # Настройка логгера для записи в файл
-# Лог-файл будет создан в папке, из которой запускается Uvicorn (внутри контейнера)
 logger.add("logs/app.log", rotation="10 MB", compression="zip") 
 
 class Settings(BaseSettings):
@@ -17,6 +18,12 @@ app = FastAPI()
 
 @app.on_event("startup")
 def on_startup():
+    # 1. НОВАЯ ЧАСТЬ: Запуск инструментатора Prometheus
+    # Эта строка автоматически создаст конечную точку /metrics, 
+    # которую Prometheus не смог найти ранее (404 Not Found)
+    Instrumentator().instrument(app).expose(app)
+    
+    # 2. Твоя существующая логика для БД (не изменена)
     try:
         # Host: 'db' (имя сервиса в compose)
         engine = create_engine(settings.db_url) 
@@ -25,16 +32,13 @@ def on_startup():
     except Exception as e:
         logger.error(f"Failed to connect to the database: {e}")
 
-
-
-
 @app.get("/")
 def read_root():
     # Добавляем запись в лог при каждом запросе
-    logger.info("Handling root request: /") # <-- НОВАЯ СТРОКА
+    logger.info("Handling root request: /") 
     return {"message": "Hello World from CI/CD v2", "secret_key_used": settings.secret_key}
 
 @app.get("/secret")
 def read_secret():
-    logger.warning("Accessing protected endpoint: /secret") # <-- НОВАЯ СТРОКА
+    logger.warning("Accessing protected endpoint: /secret")
     return {"app_secret_key": settings.secret_key}
