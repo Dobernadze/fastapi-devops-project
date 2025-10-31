@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from loguru import logger
 from sqlmodel import create_engine
 # НОВЫЙ ИМПОРТ: Инструмент для Prometheus
-from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_fastapi_instrumentator import Instrumentator # 1. Импорт
 
 # Настройка логгера для записи в файл
 logger.add("logs/app.log", rotation="10 MB", compression="zip") 
@@ -16,14 +16,13 @@ class Settings(BaseSettings):
 settings = Settings()
 app = FastAPI()
 
+# 2. КРИТИЧЕСКИЙ ФИКС: Инициализация Instrumentator ДО @app.on_event("startup")
+# Instrumentator добавляет Middleware, и это должно произойти до старта приложения.
+Instrumentator().instrument(app).expose(app) 
+
 @app.on_event("startup")
 def on_startup():
-    # 1. НОВАЯ ЧАСТЬ: Запуск инструментатора Prometheus
-    # Эта строка автоматически создаст конечную точку /metrics, 
-    # которую Prometheus не смог найти ранее (404 Not Found)
-    Instrumentator().instrument(app).expose(app)
-    
-    # 2. Твоя существующая логика для БД (не изменена)
+    # 3. В on_startup оставляем только логику, не связанную с Middleware
     try:
         # Host: 'db' (имя сервиса в compose)
         engine = create_engine(settings.db_url) 
