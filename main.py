@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from loguru import logger
-from sqlmodel import create_engine
+from sqlmodel import create_engine # Оставим, так как используется в on_startup
 # НОВЫЙ ИМПОРТ: Инструмент для Prometheus
 from prometheus_fastapi_instrumentator import Instrumentator # 1. Импорт
 
@@ -16,9 +16,9 @@ class Settings(BaseSettings):
 settings = Settings()
 app = FastAPI()
 
-# 2. КРИТИЧЕСКИЙ ФИКС: Инициализация Instrumentator ДО @app.on_event("startup")
-# Instrumentator добавляет Middleware, и это должно произойти до старта приложения.
-Instrumentator().instrument(app).expose(app) 
+# 2. КРИТИЧЕСКИЙ ФИКС: Инициализация Instrumentator и явное указание пути /metrics
+# Это устранит ошибку 404, гарантируя, что путь `/metrics` действительно добавлен.
+Instrumentator().instrument(app).expose(app, endpoint="/metrics") 
 
 @app.on_event("startup")
 def on_startup():
